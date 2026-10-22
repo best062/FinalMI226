@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -78,6 +78,7 @@ public class PlayerController : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotationX |
                          RigidbodyConstraints.FreezeRotationY |
                          RigidbodyConstraints.FreezeRotationZ |
+                         RigidbodyConstraints.FreezePositionX |
                          RigidbodyConstraints.FreezePositionZ;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
@@ -145,8 +146,9 @@ public class PlayerController : MonoBehaviour
     void FixedUpdate()
     {
         // ขณะย่อตัว ล็อคความเร็วแกน Y ไม่ให้พุ่งขึ้น เพื่อให้ตัวละครแนบติดพื้น 100%
+        // ตัวละครอยู่กับที่บนแกน X (แกน X = 0) โดยให้ฉากและสิ่งกีดขวางเลื่อนเข้าหาตัวละครแทน
         float yVel = isSliding ? Mathf.Min(0f, rb.velocity.y) : rb.velocity.y;
-        rb.velocity = new Vector3(runSpeed, yVel, 0f);
+        rb.velocity = new Vector3(0f, yVel, 0f);
     }
 
     /* ==========================================================================

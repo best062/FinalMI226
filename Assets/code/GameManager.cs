@@ -33,13 +33,21 @@ public class GameManager : MonoBehaviour
     {
         public int stageNumber;
         public string stageName;       // เช่น "Savanna: Lion", "Forest: Bear"
-        public float distanceToBoss;   // ระยะทางที่ต้องวิ่งก่อนพบบอส (เช่น 500 เมตร)
+        [Tooltip("ความเร็วในการเลื่อนฉากประจำด่านนี้ (หากใส่ 0 จะใช้ความเร็วเดิม)")]
+        public float stageSpeed;       // เช่น 8f (ด่าน 1), 10f (ด่าน 2), 12f (ด่าน 3)
+        public float distanceToBoss;   // ระยะทางที่ต้องวิ่งก่อนพบบอส (เช่น 300 เมตร)
         public GameObject bossPrefab;  // Prefab ของบอสประจำด่าน
+        [Tooltip("รายการคำศัพท์ประจำด่าน สำหรับให้ Spawner สุ่มโปรยตัวอักษรลงมาบนทางวิ่ง")]
+        public List<string> stageWords; 
     }
 
     [Header("Stage Configuration")]
     public List<StageProfile> stages = new List<StageProfile>();
     public int currentStageIndex = 0;
+
+    [Header("World & Scroll Settings")]
+    [Tooltip("ความเร็วในการเลื่อนฉากและสิ่งกีดขวางจากขวาไปซ้าย (จะปรับอัตโนมัติตาม stageSpeed ของแต่ละด่าน)")]
+    public float worldScrollSpeed = 8f;
 
     [Header("Current Progress")]
     public GamePhase currentPhase = GamePhase.Runner;
@@ -52,6 +60,25 @@ public class GameManager : MonoBehaviour
 
     private GameObject activeBossInstance;
     private BossController activeBossController;
+
+    public static GameManager Instance { get; private set; }
+
+    // Events สำหรับแจ้งเตือนระบบอื่น (เช่น SpawnManager) ให้เริ่ม/หยุดตามสถานะ
+    public event Action<int, StageProfile> OnStageStarted;
+    public event Action OnBossEncounterStarted;
+    public event Action OnStageCompleted;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     void Start()
     {
@@ -72,11 +99,11 @@ public class GameManager : MonoBehaviour
         switch (currentPhase)
         {
             case GamePhase.Runner:
-                // 1. วิ่งเก็บระยะทาง
-                distanceRun += player.runSpeed * Time.deltaTime;
+                // 1. วิ่งเก็บระยะทางตามความเร็วการเลื่อนฉาก
+                distanceRun += worldScrollSpeed * Time.deltaTime;
 
                 // ตรวจสอบว่าวิ่งถึงระยะเจอบอสหรือยัง
-                if (distanceRun >= stages[currentStageIndex].distanceToBoss)
+                if (currentStageIndex < stages.Count && distanceRun >= stages[currentStageIndex].distanceToBoss)
                 {
                     TransitionToBossEncounter();
                 }
@@ -109,6 +136,9 @@ public class GameManager : MonoBehaviour
         currentPhase = GamePhase.BossEncounter;
         Debug.Log("[GameManager] วิ่งถึงระยะกำหนดแล้ว! พบบอสประจำด่าน!");
 
+        // ส่งสัญญาณให้ Spawner หยุดปล่อยสิ่งกีดขวาง
+        OnBossEncounterStarted?.Invoke();
+
         StageProfile stage = stages[currentStageIndex];
         if (stage.bossPrefab != null && bossSpawnPoint != null)
         {
@@ -138,6 +168,7 @@ public class GameManager : MonoBehaviour
             activeBossController.OnBossDefeated -= OnBossKilled;
         }
 
+        OnStageCompleted?.Invoke();
         Invoke(nameof(ProceedToNextStage), 2.5f);
     }
 
@@ -168,6 +199,27 @@ public class GameManager : MonoBehaviour
             Destroy(activeBossInstance);
         }
 
-        Debug.Log($"[GameManager] เริ่มต้นด่านที่ {stageIdx + 1}: {stages[stageIdx].stageName}");
+        if (stageIdx < stages.Count)
+        {
+            StageProfile stage = stages[stageIdx];
+            // ซิงค์ความเร็วของโลกตามด่านใหม่โดยอัตโนมัติ
+            if (stage.stageSpeed > 0f)
+            {
+                worldScrollSpeed = stage.stageSpeed;
+                Debug.Log($"[GameManager] ซิงค์ความเร็วของด่านเป็น: {worldScrollSpeed}");
+            }
+
+            Debug.Log($"[GameManager] เริ่มต้นด่านที่ {stageIdx + 1}: {stage.stageName}");
+            OnStageStarted?.Invoke(stageIdx, stage);
+        }
+    }
+
+    public StageProfile GetCurrentStageProfile()
+    {
+        if (currentStageIndex >= 0 && currentStageIndex < stages.Count)
+        {
+            return stages[currentStageIndex];
+        }
+        return default;
     }
 }
