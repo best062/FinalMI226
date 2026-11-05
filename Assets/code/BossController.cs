@@ -147,7 +147,13 @@ public class BossController : MonoBehaviour
     {
         AnimalWordData target = GetCurrentTargetWord();
         Debug.Log($"[Boss] ปล่อยลูกน้องพร้อมคำศัพท์เป้าหมาย: {target.word} ({target.meaning})");
-        // TODO: เรียก SpawnManager ให้ปล่อยตัวอักษรประจำคำนี้ออกมาบนเลน
+        
+        // สั่งให้ SpawnManager ปล่อยกล่องสุ่มตัวอักษร (LetterBox) ออกมาบนเลน เพื่อให้ผู้เล่นเก็บตัวอักษรที่ยังขาดอยู่
+        SpawnManager spawner = FindObjectOfType<SpawnManager>();
+        if (spawner != null)
+        {
+            spawner.SpawnLetterBoxManual();
+        }
     }
 
     /* ==========================================================================

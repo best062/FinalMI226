@@ -40,6 +40,21 @@ public class LetterInventory : MonoBehaviour
     }
 
     /* ==========================================================================
+       SECTION 2.1: QUERY HELPERS (ฟังก์ชันสืบค้นข้อมูลตัวอักษร)
+       ทำหน้าที่: ดึงจำนวนตัวอักษรเฉพาะตัว หรือดึงคลังตัวอักษรทั้งหมด (สำหรับ Smart Drop)
+       ========================================================================== */
+    public int GetLetterCount(char letter)
+    {
+        char upperChar = char.ToUpper(letter);
+        return lettersBag.TryGetValue(upperChar, out int count) ? count : 0;
+    }
+
+    public Dictionary<char, int> GetAllLetters()
+    {
+        return new Dictionary<char, int>(lettersBag);
+    }
+
+    /* ==========================================================================
        SECTION 3: SPELLING VALIDATION (ตรวจสอบว่ามีตัวอักษรพอสะกดคำหรือไม่)
        ทำหน้าที่: เช็คว่าในกระเป๋ามีตัวอักษรครบตามที่คำศัพท์เป้าหมายของบอสต้องการหรือไม่
        ========================================================================== */

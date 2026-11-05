@@ -31,7 +31,8 @@
 | `airSpawnPoint` | `Transform` | - | จุดปล่อยวัตถุลอยสูงทางขวา |
 | `lowObstaclePrefabs` | `List<GameObject>` | - | รายการ Prefab สิ่งกีดขวางต่ำ (ก้อนหิน, หนาม) |
 | `highObstaclePrefabs` | `List<GameObject>` | - | รายการ Prefab สิ่งกีดขวางสูง (ท่อนไม้ลอย) |
-| `letterPrefab` | `GameObject` | - | Prefab เหรียญ/ตัวอักษร 3D |
+| `letterBoxPrefab` | `GameObject` | - | Prefab กล่องสุ่มตัวอักษร 3D (`LetterBox`) ระบบหลักแนะนำเพื่อแก้ปัญหา Asset |
+| `letterPrefab` | `GameObject` | - | Prefab เหรียญ/ตัวอักษร 3D รายตัวแบบเดิม (Fallback) |
 | `minSpawnInterval` | `float` | `1.8` | ช่วงเวลาต่ำสุดในการปล่อยวัตถุ (วินาที) |
 | `maxSpawnInterval` | `float` | `3.2` | ช่วงเวลาสูงสุดในการปล่อยวัตถุ (วินาที) |
 | `baseReferenceSpeed` | `float` | `8.0` | ความเร็วอ้างอิงฐานสำหรับคำนวณสัดส่วนเวลา |

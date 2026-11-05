@@ -31,8 +31,11 @@ public class SpawnManager : MonoBehaviour
     [Tooltip("รายการ Prefab สิ่งกีดขวางระดับสูง (กดย่อสไลด์หลบ)")]
     public List<GameObject> highObstaclePrefabs = new List<GameObject>();
 
-    [Header("Prefabs: Letters (ตัวอักษร)")]
-    [Tooltip("Prefab เหรียญ/ตัวอักษร 3D ที่มีสคริปต์ CollectibleLetter")]
+    [Header("Prefabs: Generic Letter Box / Letters (กล่องสุ่มตัวอักษร)")]
+    [Tooltip("Prefab กล่องสุ่ม/ถุงวัตถุดิบ (Generic Letter Box) ที่มีสคริปต์ LetterBox (แนะนำให้ใช้เพื่อแก้ปัญหาเรื่อง Asset และตัดปัญหา Softlock ตอนสู้บอส)")]
+    public GameObject letterBoxPrefab;
+
+    [Tooltip("Prefab เหรียญ/ตัวอักษร 3D ที่มีสคริปต์ CollectibleLetter (สำหรับการเสกโมเดลตัวอักษร 3D รายตัวแบบเดิม)")]
     public GameObject letterPrefab;
 
     /* ==========================================================================
@@ -186,11 +189,20 @@ public class SpawnManager : MonoBehaviour
 
     private void SpawnLetter()
     {
-        if (letterPrefab == null) return;
-
         // สุ่มปล่อยที่พื้นดิน หรือที่ลอยฟ้า (ให้กระโดดเก็บ)
         Transform spawnPoint = (Random.value > 0.5f && airSpawnPoint != null) ? airSpawnPoint : groundSpawnPoint;
         if (spawnPoint == null) return;
+
+        // 1. ตรวจสอบว่ามีการใส่ Prefab กล่องสุ่ม/ถุงวัตถุดิบ (Generic Letter Box) หรือไม่
+        if (letterBoxPrefab != null)
+        {
+            GameObject boxObj = Instantiate(letterBoxPrefab, spawnPoint.position, spawnPoint.rotation, spawnedObjectsParent);
+            RegisterSpawnedObject(boxObj);
+            return;
+        }
+
+        // 2. Fallback: ถ้ายังไม่มี letterBoxPrefab ให้ใช้ Prefab ตัวอักษร 3D รายตัวแบบเดิม
+        if (letterPrefab == null) return;
 
         GameObject letterObj = Instantiate(letterPrefab, spawnPoint.position, spawnPoint.rotation, spawnedObjectsParent);
         RegisterSpawnedObject(letterObj);
@@ -202,6 +214,11 @@ public class SpawnManager : MonoBehaviour
             char letterToGive = PickSmartLetter();
             collectible.SetLetter(letterToGive);
         }
+    }
+
+    public void SpawnLetterBoxManual()
+    {
+        SpawnLetter();
     }
 
     /* ==========================================================================
