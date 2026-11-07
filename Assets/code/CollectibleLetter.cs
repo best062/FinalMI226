@@ -30,13 +30,33 @@ public class CollectibleLetter : MonoBehaviour
     public float bobHeight = 0.25f;
 
     private Vector3 initialLocalPos;
+    private float baseY;
+    private bool isChildModel = false;
 
     void Start()
     {
-        // ถ้าไม่ได้ผูกโมเดลเฉพาะ ให้ใช้ transform ของตัวเอง
+        // ถ้าไม่ได้ผูกโมเดลเฉพาะ ให้ลองหาในโหนดลูกก่อน
         if (visualModel == null)
         {
-            visualModel = transform;
+            if (transform.childCount > 0)
+            {
+                visualModel = transform.GetChild(0);
+            }
+            else
+            {
+                visualModel = transform;
+            }
+        }
+
+        isChildModel = (visualModel != null && visualModel != transform);
+
+        if (isChildModel)
+        {
+            initialLocalPos = visualModel.localPosition;
+        }
+        else
+        {
+            baseY = transform.position.y;
         }
 
         // ค้นหา TextMeshPro ในลูกอัตโนมัติหากยังไม่ได้ลากมาใส่
@@ -45,22 +65,33 @@ public class CollectibleLetter : MonoBehaviour
             textMesh = GetComponentInChildren<TMP_Text>();
         }
 
-        initialLocalPos = visualModel.localPosition;
         UpdateVisuals();
     }
 
     void Update()
     {
-        // 1. แอนิเมชันหมุน 3D
-        if (visualModel != null)
+        if (isChildModel && visualModel != null)
         {
-            visualModel.Rotate(Vector3.up * rotateSpeed * Time.deltaTime, Space.World);
+            // 1. โมเดลลูก: หมุนและปรับ Local Position โดยไม่รบกวน ScrollLeft
+            visualModel.Rotate(Vector3.up * rotateSpeed * Time.deltaTime, Space.Self);
 
-            // 2. เอฟเฟกต์ลอยขึ้นลง (Bobbing) ให้เห็นชัดเจนในฉาก
             if (enableBobbing)
             {
                 float newY = initialLocalPos.y + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
                 visualModel.localPosition = new Vector3(initialLocalPos.x, newY, initialLocalPos.z);
+            }
+        }
+        else
+        {
+            // 2. โมเดลแม่: หมุนและปรับเฉพาะแกน Y เท่านั้น เพื่อรักษาแกน X ให้ ScrollLeft เคลื่อนที่
+            transform.Rotate(Vector3.up * rotateSpeed * Time.deltaTime, Space.World);
+
+            if (enableBobbing)
+            {
+                float newY = baseY + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
+                Vector3 curPos = transform.position;
+                curPos.y = newY;
+                transform.position = curPos;
             }
         }
     }

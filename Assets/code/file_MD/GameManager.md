@@ -47,7 +47,9 @@ GameManager ควบคุมโฟลว์เกมผ่าน Enum `GamePha
 | :--- | :--- | :--- | :--- |
 | `stages` | `List<StageProfile>` | - | รายการตั้งค่าด่านทั้งหมดในเกม (กำหนดความเร็ว, ระยะทาง, คำศัพท์, บอส) |
 | `currentStageIndex` | `int` | `0` | ดัชนีด่านปัจจุบัน |
-| `worldScrollSpeed` | `float` | `8.0` | ความเร็วปัจจุบันในการเลื่อนฉากและสิ่งกีดขวาง |
+| `objectScrollSpeed` | `float` | `10.0` | ความเร็วในการเลื่อนของสิ่งกีดขวาง กล่องสุ่ม และไอเทม (Gameplay Objects) |
+| `worldBackgroundSpeed` | `float` | `6.0` | ความเร็วในการเลื่อนของฉากหลัง แผ่นพื้น และสิ่งแวดล้อม (World/Parallax) |
+| `worldScrollSpeed` | `float` | `10.0` | อ้างอิงความเร็วรวม (Backwards Compatibility) |
 | `currentPhase` | `GamePhase` | `Runner` | สถานะเฟสปัจจุบันของเกม |
 | `distanceRun` | `float` | `0` | ระยะทางสะสมที่วิ่งไปแล้วในด่านปัจจุบัน |
 | `player` | `PlayerController` | - | อ้างอิงถึงตัวละครผู้เล่น |
@@ -61,3 +63,11 @@ GameManager ควบคุมโฟลว์เกมผ่าน Enum `GamePha
 - `public event Action<int, StageProfile> OnStageStarted;` : แจ้งเตือนเมื่อเริ่มด่านใหม่และส่งข้อมูลด่าน
 - `public event Action OnBossEncounterStarted;` : แจ้งเตือนเมื่อถึงระยะเจอบอส เพื่อให้ Spawner หยุดทำงาน
 - `public event Action OnStageCompleted;` : แจ้งเตือนเมื่อผ่านด่านเรียบร้อย
+- `public event Action<float, float> OnDistanceUpdated;` : แจ้งเตือนอัปเดตระยะทางแบบ Realtime `(currentDistance, targetDistanceToBoss)` สำหรับหน้าจอ UI (`DistanceUI`)
+
+---
+
+## 🔍 ฟังก์ชันสืบค้นระยะทาง (Distance Query Helpers)
+
+- `GetCurrentDistanceToBoss()` : คืนค่าระยะทางเป้าหมายประจำด่านที่ต้องวิ่งไปให้ถึงก่อนเจอบอส (`distanceToBoss` เช่น 1500)
+- `GetDistanceProgressNormalized()` : คืนค่าอัตราส่วนความคืบหน้า (0.0 ถึง 1.0) สำหรับนำไปใช้วาดแถบ Slider Progress Bar ของหน้าจอ UI แสดงระยะทาง

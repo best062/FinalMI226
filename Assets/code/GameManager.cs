@@ -33,9 +33,13 @@ public class GameManager : MonoBehaviour
     {
         public int stageNumber;
         public string stageName;       // เช่น "Savanna: Lion", "Forest: Bear"
-        [Tooltip("ความเร็วในการเลื่อนฉากประจำด่านนี้ (หากใส่ 0 จะใช้ความเร็วเดิม)")]
-        public float stageSpeed;       // เช่น 8f (ด่าน 1), 10f (ด่าน 2), 12f (ด่าน 3)
-        public float distanceToBoss;   // ระยะทางที่ต้องวิ่งก่อนพบบอส (เช่น 300 เมตร)
+        [Tooltip("ความเร็วของสิ่งกีดขวาง/ไอเทมประจำด่าน (Gameplay Objects Speed) เช่น 10f")]
+        public float stageObjectSpeed;
+        [Tooltip("ความเร็วของฉากหลัง/พื้นประจำด่าน (World/Background Speed) เช่น 6f")]
+        public float stageWorldSpeed;
+        [Tooltip("ความเร็วแบบเดิม (Fallback กรณีไม่ได้แยกช่องด้านบน)")]
+        public float stageSpeed;       
+        public float distanceToBoss;   // ระยะทางที่ต้องวิ่งก่อนพบบอส (เช่น 1500 เมตร)
         public GameObject bossPrefab;  // Prefab ของบอสประจำด่าน
         [Tooltip("รายการคำศัพท์ประจำด่าน สำหรับให้ Spawner สุ่มโปรยตัวอักษรลงมาบนทางวิ่ง")]
         public List<string> stageWords; 
@@ -45,9 +49,19 @@ public class GameManager : MonoBehaviour
     public List<StageProfile> stages = new List<StageProfile>();
     public int currentStageIndex = 0;
 
-    [Header("World & Scroll Settings")]
-    [Tooltip("ความเร็วในการเลื่อนฉากและสิ่งกีดขวางจากขวาไปซ้าย (จะปรับอัตโนมัติตาม stageSpeed ของแต่ละด่าน)")]
-    public float worldScrollSpeed = 8f;
+    [Header("Scroll Speeds (แยกความเร็วฉากหลังกับสิ่งกีดขวาง/ไอเทม)")]
+    [Tooltip("ความเร็วในการเลื่อนของสิ่งกีดขวาง กล่องสุ่มตัวอักษร และวัตถุบนทางวิ่ง (Gameplay Objects)")]
+    public float objectScrollSpeed = 10f;
+
+    [Tooltip("ความเร็วในการเลื่อนของฉากหลัง แผ่นพื้น และสิ่งแวดล้อม (World Background / Parallax)")]
+    public float worldBackgroundSpeed = 6f;
+
+    // Backwards Compatibility: คืนค่า objectScrollSpeed เพื่อให้โค้ดเดิมไม่พัง
+    public float worldScrollSpeed
+    {
+        get => objectScrollSpeed;
+        set => objectScrollSpeed = value;
+    }
 
     [Header("Current Progress")]
     public GamePhase currentPhase = GamePhase.Runner;
@@ -63,10 +77,11 @@ public class GameManager : MonoBehaviour
 
     public static GameManager Instance { get; private set; }
 
-    // Events สำหรับแจ้งเตือนระบบอื่น (เช่น SpawnManager) ให้เริ่ม/หยุดตามสถานะ
+    // Events สำหรับแจ้งเตือนระบบอื่น (เช่น SpawnManager, DistanceUI) ให้เริ่ม/หยุดตามสถานะ
     public event Action<int, StageProfile> OnStageStarted;
     public event Action OnBossEncounterStarted;
     public event Action OnStageCompleted;
+    public event Action<float, float> OnDistanceUpdated; // (currentDistance, targetDistanceToBoss)
 
     void Awake()
     {
@@ -101,6 +116,8 @@ public class GameManager : MonoBehaviour
             case GamePhase.Runner:
                 // 1. วิ่งเก็บระยะทางตามความเร็วการเลื่อนฉาก
                 distanceRun += worldScrollSpeed * Time.deltaTime;
+                float targetDistance = GetCurrentDistanceToBoss();
+                OnDistanceUpdated?.Invoke(distanceRun, targetDistance);
 
                 // ตรวจสอบว่าวิ่งถึงระยะเจอบอสหรือยัง
                 if (currentStageIndex < stages.Count && distanceRun >= stages[currentStageIndex].distanceToBoss)
@@ -202,12 +219,27 @@ public class GameManager : MonoBehaviour
         if (stageIdx < stages.Count)
         {
             StageProfile stage = stages[stageIdx];
-            // ซิงค์ความเร็วของโลกตามด่านใหม่โดยอัตโนมัติ
-            if (stage.stageSpeed > 0f)
+            // ซิงค์ความเร็วของสิ่งกีดขวางและฉากหลังแยกจากกัน
+            if (stage.stageObjectSpeed > 0f)
             {
-                worldScrollSpeed = stage.stageSpeed;
-                Debug.Log($"[GameManager] ซิงค์ความเร็วของด่านเป็น: {worldScrollSpeed}");
+                objectScrollSpeed = stage.stageObjectSpeed;
             }
+            else if (stage.stageSpeed > 0f)
+            {
+                objectScrollSpeed = stage.stageSpeed;
+            }
+
+            if (stage.stageWorldSpeed > 0f)
+            {
+                worldBackgroundSpeed = stage.stageWorldSpeed;
+            }
+            else if (stage.stageSpeed > 0f)
+            {
+                // สไตล์ Cookie Run: ฉากหลังเลื่อนช้ากว่าเลนสิ่งกีดขวางเพื่อมิติ Parallax
+                worldBackgroundSpeed = stage.stageSpeed * 0.65f;
+            }
+
+            Debug.Log($"[GameManager] ซิงค์ความเร็ว -> วัตถุ/สิ่งกีดขวาง: {objectScrollSpeed}, ฉากหลัง: {worldBackgroundSpeed}");
 
             Debug.Log($"[GameManager] เริ่มต้นด่านที่ {stageIdx + 1}: {stage.stageName}");
             OnStageStarted?.Invoke(stageIdx, stage);
@@ -221,5 +253,24 @@ public class GameManager : MonoBehaviour
             return stages[currentStageIndex];
         }
         return default;
+    }
+
+    /* ==========================================================================
+       SECTION 5: DISTANCE QUERY HELPERS (ฟังก์ชันสืบค้นระยะทางสำหรับ UI)
+       ========================================================================== */
+    public float GetCurrentDistanceToBoss()
+    {
+        if (currentStageIndex >= 0 && currentStageIndex < stages.Count)
+        {
+            return stages[currentStageIndex].distanceToBoss;
+        }
+        return 1000f; // ค่าสำรองเริ่มต้น
+    }
+
+    public float GetDistanceProgressNormalized()
+    {
+        float target = GetCurrentDistanceToBoss();
+        if (target <= 0.001f) return 0f;
+        return Mathf.Clamp01(distanceRun / target);
     }
 }
