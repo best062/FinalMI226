@@ -301,7 +301,7 @@ Transform:
   m_GameObject: {fileID: 282226129}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 25, y: -19.5, z: -2}
+  m_LocalPosition: {x: 82.2, y: -19.5, z: -2}
   m_LocalScale: {x: 240, y: 40, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -957,9 +957,9 @@ MonoBehaviour:
   doubleJumpWeight: 20
   slideWeight: 25
   letterBoxWeight: 25
-  minSpawnInterval: 1.8
-  maxSpawnInterval: 3.2
-  baseReferenceSpeed: 8
+  minSpawnInterval: 0.7
+  maxSpawnInterval: 1.5
+  baseReferenceSpeed: 10
   targetWordLetterChance: 0.8
   spawnedObjectsParent: {fileID: 0}
   enableProceduralPrototypes: 1
@@ -1598,7 +1598,7 @@ Transform:
   m_GameObject: {fileID: 1389186227}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 25, y: 10, z: 0}
+  m_LocalPosition: {x: 82.2, y: 10, z: 0}
   m_LocalScale: {x: 240, y: 20, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
